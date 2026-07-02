@@ -202,9 +202,9 @@ export function CustomerDetail() {
         const { error: removeError } = await supabase.storage.from('documents').remove(paths)
         if (removeError) throw removeError
       }
-      const { error } = await supabase.from('customers').delete().eq('id', customer.id)
+      const { error } = await supabase.rpc('delete_customer_with_login', { p_customer_id: customer.id })
       if (error) throw error
-      toast.success('Kunde und alle zugehörigen Daten wurden gelöscht.')
+      toast.success('Kunde, alle Daten und ein evtl. vorhandener Login-Zugang wurden gelöscht.')
       navigate('/kunden')
     } catch (err) {
       toast.error(extractErrorMessage(err))
@@ -242,8 +242,8 @@ export function CustomerDetail() {
                 <DialogTitle>Kunde endgültig löschen?</DialogTitle>
                 <DialogDescription>
                   Damit werden alle Policen, Prämien, Schäden, Dokumente, Nachrichten und Chancen von{' '}
-                  <strong>{customer.display_name}</strong> unwiderruflich gelöscht. Das kann nicht rückgängig gemacht
-                  werden.
+                  <strong>{customer.display_name}</strong> sowie ein evtl. vorhandener App-Login-Zugang unwiderruflich
+                  gelöscht. Das kann nicht rückgängig gemacht werden.
                 </DialogDescription>
               </DialogHeader>
               <div className="space-y-1.5">
