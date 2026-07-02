@@ -33,8 +33,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setCustomerProfile(customer ?? null)
   }
 
+  // Holt die Session frisch statt sich auf den React-State zu verlassen: direkt
+  // nach signUp() kann der onAuthStateChange-Listener seinen eigenen (verfrühten)
+  // loadProfiles-Aufruf noch nicht abgeschlossen haben, wodurch der geschlossene
+  // "session"-Wert hier veraltet (noch null) sein kann.
   const refreshProfiles = async () => {
-    if (session?.user.id) await loadProfiles(session.user.id)
+    const { data } = await supabase.auth.getSession()
+    if (data.session?.user.id) await loadProfiles(data.session.user.id)
   }
 
   useEffect(() => {
