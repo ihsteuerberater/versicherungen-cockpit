@@ -5,6 +5,7 @@ import { supabase } from '../../lib/supabase'
 import { extractErrorMessage } from '../../lib/errors'
 import { iconForSparte } from '../../lib/sparteIcons'
 import { formatDate } from '../../lib/date'
+import { paymentFrequencyLabels } from '../../lib/paymentFrequency'
 import { sanitizeFileName, ensureFreshSession } from '../../lib/storage'
 import { useCustomerPortal } from './CustomerPortalContext'
 import { PortalBanner } from '../../components/PortalBanner'
@@ -120,6 +121,12 @@ export function PolicyDetail() {
                 <div className="flex justify-between">
                   <span className="text-muted-foreground">Vertragsbeginn</span>
                   <span className="font-medium">{formatDate(policy.start_date)}</span>
+                </div>
+              )}
+              {policy.payment_frequency && (
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">Zahlungsrhythmus</span>
+                  <span className="font-medium">{paymentFrequencyLabels[policy.payment_frequency]}</span>
                 </div>
               )}
             </CardContent>

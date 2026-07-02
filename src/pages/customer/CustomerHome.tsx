@@ -7,6 +7,7 @@ import { extractErrorMessage } from '../../lib/errors'
 import { findCoverageGaps, lifeEventOptions, privatCoverageBaseline, SONSTIGES_LIFE_EVENT_VALUE } from '../../lib/crossSelling'
 import { iconForSparte } from '../../lib/sparteIcons'
 import { formatDate } from '../../lib/date'
+import { paymentFrequencyLabels } from '../../lib/paymentFrequency'
 import { sanitizeFileName, ensureFreshSession } from '../../lib/storage'
 import { useCustomerPortal } from './CustomerPortalContext'
 import { PortalBanner } from '../../components/PortalBanner'
@@ -223,6 +224,7 @@ export function CustomerHome() {
                   {p.end_date && <span>Ablauf: {formatDate(p.end_date)}</span>}
                   {p.cancellation_period && <span>Kündigungsfrist: {p.cancellation_period}</span>}
                   {p.cancellation_right_annual && <Badge variant="outline">jährlich kündbar</Badge>}
+                  {p.payment_frequency && <span>Zahlung: {paymentFrequencyLabels[p.payment_frequency]}</span>}
                   {nextDue && (
                     <span>
                       Nächste Prämie: CHF {nextDue.amount} · fällig {formatDate(nextDue.due_date)} · {nextDue.paid ? 'bezahlt' : 'offen'}

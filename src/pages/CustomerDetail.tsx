@@ -7,6 +7,7 @@ import { extractErrorMessage } from '../lib/errors'
 import { iconForSparte } from '../lib/sparteIcons'
 import { formatDate } from '../lib/date'
 import { sanitizeFileName, ensureFreshSession } from '../lib/storage'
+import { paymentFrequencyLabels } from '../lib/paymentFrequency'
 import type { Customer, Insurer, PaymentFrequency, Policy, PolicyDocument, Premium } from '../lib/types'
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardAction } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
@@ -26,13 +27,6 @@ interface PolicyWithPremiums extends Policy {
 
 const MANUAL_INSURER = '__manual__'
 const NO_FREQUENCY = '__none__'
-
-const paymentFrequencyLabels: Record<PaymentFrequency, string> = {
-  monatlich: 'Monatlich',
-  vierteljaehrlich: 'Vierteljährlich',
-  halbjaehrlich: 'Halbjährlich',
-  jaehrlich: 'Jährlich',
-}
 
 const paymentFrequencyMonths: Record<PaymentFrequency, number> = {
   monatlich: 1,
