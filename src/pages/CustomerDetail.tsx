@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { useParams } from 'react-router-dom'
+import { useParams, useNavigate } from 'react-router-dom'
 import { toast } from 'sonner'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../auth/AuthContext'
@@ -14,10 +14,10 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Checkbox } from '@/components/ui/checkbox'
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from '@/components/ui/dialog'
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogTrigger, DialogFooter } from '@/components/ui/dialog'
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from '@/components/ui/select'
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar'
-import { Plus, Link2, CheckCircle2, FileText, Upload } from 'lucide-react'
+import { Plus, Link2, CheckCircle2, FileText, Upload, Trash2 } from 'lucide-react'
 
 interface PolicyWithPremiums extends Policy {
   premiums: Premium[]
@@ -41,6 +41,7 @@ const emptyPolicyForm = {
 
 export function CustomerDetail() {
   const { customerId } = useParams<{ customerId: string }>()
+  const navigate = useNavigate()
   const { staffProfile } = useAuth()
   const [customer, setCustomer] = useState<Customer | null>(null)
   const [policies, setPolicies] = useState<PolicyWithPremiums[] | null>(null)
@@ -49,6 +50,9 @@ export function CustomerDetail() {
   const [policyDialogOpen, setPolicyDialogOpen] = useState(false)
   const [premiumDrafts, setPremiumDrafts] = useState<Record<string, { amount: string; due_date: string }>>({})
   const [uploadingDocFor, setUploadingDocFor] = useState<string | null>(null)
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
+  const [deleteConfirmText, setDeleteConfirmText] = useState('')
+  const [deleting, setDeleting] = useState(false)
 
   const load = async () => {
     if (!customerId) return
@@ -188,15 +192,76 @@ export function CustomerDetail() {
     toast.success('Link kopiert.')
   }
 
+  const handleDeleteCustomer = async () => {
+    if (!customer || deleteConfirmText !== customer.display_name) return
+    setDeleting(true)
+    try {
+      const { data: docs } = await supabase.from('documents').select('file_path').eq('customer_id', customer.id)
+      const paths = (docs ?? []).map((d) => d.file_path)
+      if (paths.length > 0) {
+        const { error: removeError } = await supabase.storage.from('documents').remove(paths)
+        if (removeError) throw removeError
+      }
+      const { error } = await supabase.from('customers').delete().eq('id', customer.id)
+      if (error) throw error
+      toast.success('Kunde und alle zugehörigen Daten wurden gelöscht.')
+      navigate('/kunden')
+    } catch (err) {
+      toast.error(extractErrorMessage(err))
+    } finally {
+      setDeleting(false)
+    }
+  }
+
   if (!customer) return <div className="p-6 text-sm text-muted-foreground">Lädt…</div>
 
   const inviteLink = customer.invite_token ? `${window.location.origin}/einladung?token=${customer.invite_token}` : null
 
   return (
     <div className="mx-auto max-w-3xl space-y-6 p-6">
-      <div className="flex items-center gap-3">
-        <h1 className="text-2xl font-semibold tracking-tight">{customer.display_name}</h1>
-        <Badge variant="outline">{customer.kind}</Badge>
+      <div className="flex items-center justify-between gap-3">
+        <div className="flex items-center gap-3">
+          <h1 className="text-2xl font-semibold tracking-tight">{customer.display_name}</h1>
+          <Badge variant="outline">{customer.kind}</Badge>
+        </div>
+        {staffProfile?.role === 'owner' && (
+          <Dialog
+            open={deleteDialogOpen}
+            onOpenChange={(open) => {
+              setDeleteDialogOpen(open)
+              if (!open) setDeleteConfirmText('')
+            }}
+          >
+            <DialogTrigger asChild>
+              <Button size="sm" variant="destructive">
+                <Trash2 className="size-4" /> Kunde löschen
+              </Button>
+            </DialogTrigger>
+            <DialogContent>
+              <DialogHeader>
+                <DialogTitle>Kunde endgültig löschen?</DialogTitle>
+                <DialogDescription>
+                  Damit werden alle Policen, Prämien, Schäden, Dokumente, Nachrichten und Chancen von{' '}
+                  <strong>{customer.display_name}</strong> unwiderruflich gelöscht. Das kann nicht rückgängig gemacht
+                  werden.
+                </DialogDescription>
+              </DialogHeader>
+              <div className="space-y-1.5">
+                <Label>Gib zur Bestätigung "{customer.display_name}" ein</Label>
+                <Input value={deleteConfirmText} onChange={(e) => setDeleteConfirmText(e.target.value)} />
+              </div>
+              <DialogFooter>
+                <Button
+                  variant="destructive"
+                  disabled={deleteConfirmText !== customer.display_name || deleting}
+                  onClick={handleDeleteCustomer}
+                >
+                  {deleting ? 'Löscht…' : 'Endgültig löschen'}
+                </Button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
+        )}
       </div>
 
       <Card>
