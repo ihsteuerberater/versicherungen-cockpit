@@ -7,7 +7,7 @@ import { extractErrorMessage } from '../lib/errors'
 import { iconForSparte } from '../lib/sparteIcons'
 import { formatDate } from '../lib/date'
 import { sanitizeFileName, ensureFreshSession } from '../lib/storage'
-import type { Customer, Insurer, Policy, PolicyDocument, Premium } from '../lib/types'
+import type { Customer, Insurer, PaymentFrequency, Policy, PolicyDocument, Premium } from '../lib/types'
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardAction } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
@@ -25,6 +25,30 @@ interface PolicyWithPremiums extends Policy {
 }
 
 const MANUAL_INSURER = '__manual__'
+const NO_FREQUENCY = '__none__'
+
+const paymentFrequencyLabels: Record<PaymentFrequency, string> = {
+  monatlich: 'Monatlich',
+  vierteljaehrlich: 'Vierteljährlich',
+  halbjaehrlich: 'Halbjährlich',
+  jaehrlich: 'Jährlich',
+}
+
+const paymentFrequencyMonths: Record<PaymentFrequency, number> = {
+  monatlich: 1,
+  vierteljaehrlich: 3,
+  halbjaehrlich: 6,
+  jaehrlich: 12,
+}
+
+function suggestNextPremium(policy: PolicyWithPremiums): { amount: string; due_date: string } | null {
+  if (!policy.payment_frequency) return null
+  const last = policy.premiums.slice().sort((a, b) => b.due_date.localeCompare(a.due_date))[0]
+  if (!last) return null
+  const nextDate = new Date(last.due_date)
+  nextDate.setMonth(nextDate.getMonth() + paymentFrequencyMonths[policy.payment_frequency])
+  return { amount: String(last.amount), due_date: nextDate.toISOString().slice(0, 10) }
+}
 
 const emptyPolicyForm = {
   sparte: '',
@@ -37,6 +61,7 @@ const emptyPolicyForm = {
   cancellation_right_annual: false,
   cancellation_deadline: '',
   cancellation_alert_enabled: false,
+  payment_frequency: '' as PaymentFrequency | '',
 }
 
 export function CustomerDetail() {
@@ -86,6 +111,27 @@ export function CustomerDetail() {
     load()
   }, [customerId])
 
+  // Schlägt Betrag + nächstes Fälligkeitsdatum für Policen mit Zahlungsrhythmus
+  // vor, damit man wiederkehrende Prämien (z.B. monatliche 3a) nicht jedes Mal
+  // von Hand eintippen muss. Überschreibt keine bereits begonnene Eingabe.
+  useEffect(() => {
+    if (!policies) return
+    setPremiumDrafts((prev) => {
+      let changed = false
+      const next = { ...prev }
+      for (const p of policies) {
+        if (!next[p.id]?.amount && !next[p.id]?.due_date) {
+          const suggestion = suggestNextPremium(p)
+          if (suggestion) {
+            next[p.id] = suggestion
+            changed = true
+          }
+        }
+      }
+      return changed ? next : prev
+    })
+  }, [policies])
+
   const handleAddPolicy = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!staffProfile || !customerId) return
@@ -106,6 +152,7 @@ export function CustomerDetail() {
         cancellation_right_annual: form.cancellation_right_annual,
         cancellation_deadline: form.cancellation_deadline || null,
         cancellation_alert_enabled: form.cancellation_alert_enabled,
+        payment_frequency: form.payment_frequency || null,
       })
       if (error) throw error
       setForm(emptyPolicyForm)
@@ -140,7 +187,10 @@ export function CustomerDetail() {
     await load()
   }
 
-  const updateCancellationAlert = async (policyId: string, patch: Partial<Pick<Policy, 'cancellation_deadline' | 'cancellation_alert_enabled'>>) => {
+  const updatePolicy = async (
+    policyId: string,
+    patch: Partial<Pick<Policy, 'cancellation_deadline' | 'cancellation_alert_enabled' | 'payment_frequency'>>,
+  ) => {
     try {
       const { error } = await supabase.from('policies').update(patch).eq('id', policyId)
       if (error) throw error
@@ -364,6 +414,25 @@ export function CustomerDetail() {
                 />
                 60 Tage vor Stichtag als Chance im Posteingang aufleuchten lassen
               </label>
+              <div className="space-y-1.5">
+                <Label>Zahlungsrhythmus (für Prämien-Vorschlag)</Label>
+                <Select
+                  value={form.payment_frequency || NO_FREQUENCY}
+                  onValueChange={(v) => setForm({ ...form, payment_frequency: v === NO_FREQUENCY ? '' : (v as PaymentFrequency) })}
+                >
+                  <SelectTrigger className="w-full">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value={NO_FREQUENCY}>Kein fester Rhythmus</SelectItem>
+                    {Object.entries(paymentFrequencyLabels).map(([value, label]) => (
+                      <SelectItem key={value} value={value}>
+                        {label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
               <DialogFooter>
                 <Button type="submit">Hinzufügen</Button>
               </DialogFooter>
@@ -409,20 +478,38 @@ export function CustomerDetail() {
                     type="date"
                     className="h-8 w-40"
                     value={p.cancellation_deadline ?? ''}
-                    onChange={(e) => updateCancellationAlert(p.id, { cancellation_deadline: e.target.value || null })}
+                    onChange={(e) => updatePolicy(p.id, { cancellation_deadline: e.target.value || null })}
                   />
                 </div>
                 <label className="flex items-center gap-2 text-sm">
                   <Checkbox
                     checked={p.cancellation_alert_enabled}
-                    onCheckedChange={(checked) => updateCancellationAlert(p.id, { cancellation_alert_enabled: checked === true })}
+                    onCheckedChange={(checked) => updatePolicy(p.id, { cancellation_alert_enabled: checked === true })}
                   />
                   60 Tage vorher als Chance aufleuchten
                 </label>
               </div>
 
               <div>
-                <p className="mb-1.5 text-sm font-medium">Prämien</p>
+                <div className="mb-1.5 flex items-center justify-between">
+                  <p className="text-sm font-medium">Prämien</p>
+                  <Select
+                    value={p.payment_frequency ?? NO_FREQUENCY}
+                    onValueChange={(v) => updatePolicy(p.id, { payment_frequency: v === NO_FREQUENCY ? null : (v as PaymentFrequency) })}
+                  >
+                    <SelectTrigger size="sm" className="w-44">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value={NO_FREQUENCY}>Kein fester Rhythmus</SelectItem>
+                      {Object.entries(paymentFrequencyLabels).map(([value, label]) => (
+                        <SelectItem key={value} value={value}>
+                          {label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
                 <div className="space-y-1">
                   {p.premiums.map((prem) => (
                     <div key={prem.id} className="flex items-center justify-between text-sm">

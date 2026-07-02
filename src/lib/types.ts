@@ -61,9 +61,12 @@ export interface Policy {
   cancellation_right_annual: boolean
   cancellation_deadline: string | null
   cancellation_alert_enabled: boolean
+  payment_frequency: PaymentFrequency | null
   status: PolicyStatus
   created_at: string
 }
+
+export type PaymentFrequency = 'monatlich' | 'vierteljaehrlich' | 'halbjaehrlich' | 'jaehrlich'
 
 export interface Premium {
   id: string
