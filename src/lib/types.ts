@@ -45,7 +45,7 @@ export interface Insurer {
   created_at: string
 }
 
-export type PolicyStatus = 'active' | 'cancelled' | 'expired'
+export type PolicyStatus = 'active' | 'sistiert' | 'cancelled' | 'expired'
 
 export interface Policy {
   id: string

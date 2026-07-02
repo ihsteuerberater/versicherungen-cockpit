@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import { useNavigate, Link } from 'react-router-dom'
 import { toast } from 'sonner'
 import { supabase } from '../../lib/supabase'
-import { ampelForPolicy } from '../../lib/ampel'
+import { ampelForPolicy, ampelBadgeClass } from '../../lib/ampel'
 import { extractErrorMessage } from '../../lib/errors'
 import { findCoverageGaps, lifeEventOptions, privatCoverageBaseline, SONSTIGES_LIFE_EVENT_VALUE } from '../../lib/crossSelling'
 import { iconForSparte } from '../../lib/sparteIcons'
@@ -20,12 +20,6 @@ import { Textarea } from '@/components/ui/textarea'
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogTrigger, DialogFooter } from '@/components/ui/dialog'
 import { Umbrella, Sparkles, Lightbulb, TriangleAlert, MessageCircleQuestion, FileUp, ChevronRight } from 'lucide-react'
-
-const ampelBadgeVariant: Record<string, 'destructive' | 'secondary' | 'outline'> = {
-  rot: 'destructive',
-  gelb: 'secondary',
-  gruen: 'outline',
-}
 
 function getGreeting() {
   const hour = new Date().getHours()
@@ -215,7 +209,9 @@ export function CustomerHome() {
                   </CardTitle>
                   <CardDescription>{reason}</CardDescription>
                   <CardAction className="flex items-center gap-1.5">
-                    <Badge variant={ampelBadgeVariant[ampel]}>{ampel === 'rot' ? 'Handlungsbedarf' : ampel === 'gelb' ? 'Bald fällig' : 'In Ordnung'}</Badge>
+                    <Badge variant="outline" className={ampelBadgeClass[ampel]}>
+                      {ampel === 'rot' ? 'Handlungsbedarf' : ampel === 'gelb' ? 'Bald fällig' : 'In Ordnung'}
+                    </Badge>
                     <ChevronRight className="size-4 text-muted-foreground" />
                   </CardAction>
                 </CardHeader>

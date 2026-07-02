@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
-import { ampelForPolicy, type Ampel } from '../lib/ampel'
+import { ampelForPolicy, ampelBadgeClass, type Ampel } from '../lib/ampel'
 import { iconForSparte } from '../lib/sparteIcons'
 import { Card, CardContent } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
@@ -24,12 +24,6 @@ const ampelDot: Record<Ampel, string> = {
   rot: 'bg-danger',
   gelb: 'bg-warning',
   gruen: 'bg-success',
-}
-
-const ampelBadge: Record<Ampel, 'destructive' | 'secondary' | 'outline'> = {
-  rot: 'destructive',
-  gelb: 'secondary',
-  gruen: 'outline',
 }
 
 export function Dashboard() {
@@ -151,7 +145,7 @@ export function Dashboard() {
               <span className="flex-1 text-muted-foreground">
                 {r.sparte} · {r.insurerName}
               </span>
-              <Badge variant={ampelBadge[r.ampel]}>{r.reason}</Badge>
+              <Badge variant="outline" className={ampelBadgeClass[r.ampel]}>{r.reason}</Badge>
             </Link>
           )
         })}

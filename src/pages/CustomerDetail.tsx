@@ -8,6 +8,8 @@ import { iconForSparte } from '../lib/sparteIcons'
 import { formatDate } from '../lib/date'
 import { sanitizeFileName, ensureFreshSession } from '../lib/storage'
 import { paymentFrequencyLabels } from '../lib/paymentFrequency'
+import { policyStatusLabels, policyStatusClass } from '../lib/policyStatus'
+import { cn } from '@/lib/utils'
 import type { Customer, Insurer, PaymentFrequency, Policy, PolicyDocument, Premium } from '../lib/types'
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardAction } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
@@ -183,7 +185,7 @@ export function CustomerDetail() {
 
   const updatePolicy = async (
     policyId: string,
-    patch: Partial<Pick<Policy, 'cancellation_deadline' | 'cancellation_alert_enabled' | 'payment_frequency'>>,
+    patch: Partial<Pick<Policy, 'cancellation_deadline' | 'cancellation_alert_enabled' | 'payment_frequency' | 'status'>>,
   ) => {
     try {
       const { error } = await supabase.from('policies').update(patch).eq('id', policyId)
@@ -454,7 +456,18 @@ export function CustomerDetail() {
               </CardTitle>
               {p.policy_number && <CardDescription>Nr. {p.policy_number}</CardDescription>}
               <CardAction>
-                <Badge variant="outline">{p.status}</Badge>
+                <Select value={p.status} onValueChange={(v) => updatePolicy(p.id, { status: v as Policy['status'] })}>
+                  <SelectTrigger size="sm" className={cn('w-32', policyStatusClass[p.status])}>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {Object.entries(policyStatusLabels).map(([value, label]) => (
+                      <SelectItem key={value} value={value}>
+                        {label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </CardAction>
             </CardHeader>
             <CardContent className="space-y-4">

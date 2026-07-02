@@ -1,5 +1,11 @@
 export type Ampel = 'rot' | 'gelb' | 'gruen'
 
+export const ampelBadgeClass: Record<Ampel, string> = {
+  rot: 'border-danger/30 bg-danger/10 text-danger',
+  gelb: 'border-warning/30 bg-warning/10 text-warning',
+  gruen: 'border-success/30 bg-success/10 text-success',
+}
+
 const DAY_MS = 24 * 60 * 60 * 1000
 
 export function ampelForPolicy(

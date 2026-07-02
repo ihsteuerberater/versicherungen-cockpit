@@ -6,6 +6,7 @@ import { extractErrorMessage } from '../../lib/errors'
 import { iconForSparte } from '../../lib/sparteIcons'
 import { formatDate } from '../../lib/date'
 import { paymentFrequencyLabels } from '../../lib/paymentFrequency'
+import { policyStatusLabels, policyStatusClass } from '../../lib/policyStatus'
 import { sanitizeFileName, ensureFreshSession } from '../../lib/storage'
 import { useCustomerPortal } from './CustomerPortalContext'
 import { PortalBanner } from '../../components/PortalBanner'
@@ -115,7 +116,7 @@ export function PolicyDetail() {
               )}
               <div className="flex justify-between">
                 <span className="text-muted-foreground">Status</span>
-                <Badge variant="outline">{policy.status}</Badge>
+                <Badge variant="outline" className={policyStatusClass[policy.status]}>{policyStatusLabels[policy.status]}</Badge>
               </div>
               {policy.start_date && (
                 <div className="flex justify-between">
