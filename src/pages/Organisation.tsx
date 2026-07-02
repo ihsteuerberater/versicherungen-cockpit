@@ -20,6 +20,7 @@ export function OrganisationSettings() {
   const [phone, setPhone] = useState('')
   const [email, setEmail] = useState('')
   const [address, setAddress] = useState('')
+  const [website, setWebsite] = useState('')
   const [busy, setBusy] = useState(false)
   const [insurers, setInsurers] = useState<Insurer[] | null>(null)
   const [newInsurerName, setNewInsurerName] = useState('')
@@ -34,6 +35,7 @@ export function OrganisationSettings() {
       setPhone(data.phone ?? '')
       setEmail(data.email ?? '')
       setAddress(data.address ?? '')
+      setWebsite(data.website ?? '')
     }
     const { data: insurerData } = await supabase.from('insurers').select('*').order('name')
     setInsurers(insurerData ?? [])
@@ -49,7 +51,7 @@ export function OrganisationSettings() {
     try {
       const { error } = await supabase
         .from('organizations')
-        .update({ name, primary_color: color, phone, email, address })
+        .update({ name, primary_color: color, phone, email, address, website })
         .eq('id', staffProfile.organization_id)
       if (error) throw error
       document.documentElement.style.setProperty('--primary', color)
@@ -185,6 +187,10 @@ export function OrganisationSettings() {
           <div className="space-y-2">
             <Label htmlFor="org-address">Adresse</Label>
             <Input id="org-address" value={address} onChange={(e) => setAddress(e.target.value)} placeholder="Strasse, PLZ Ort" />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="org-website">Internetadresse</Label>
+            <Input id="org-website" value={website} onChange={(e) => setWebsite(e.target.value)} placeholder="www.deinefirma.ch" />
           </div>
           <Button onClick={handleSave} disabled={busy}>
             Speichern

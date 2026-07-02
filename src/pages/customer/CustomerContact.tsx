@@ -1,7 +1,7 @@
 import { useCustomerPortal } from './CustomerPortalContext'
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card'
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar'
-import { Phone, Mail, MapPin } from 'lucide-react'
+import { Phone, Mail, MapPin, Globe } from 'lucide-react'
 
 export function CustomerContact() {
   const { org, advisor } = useCustomerPortal()
@@ -55,6 +55,16 @@ export function CustomerContact() {
             {org.email && (
               <a href={`mailto:${org.email}`} className="flex items-center gap-2 text-primary">
                 <Mail className="size-4 shrink-0" /> {org.email}
+              </a>
+            )}
+            {org.website && (
+              <a
+                href={org.website.startsWith('http') ? org.website : `https://${org.website}`}
+                target="_blank"
+                rel="noreferrer"
+                className="flex items-center gap-2 text-primary"
+              >
+                <Globe className="size-4 shrink-0" /> {org.website}
               </a>
             )}
           </CardContent>

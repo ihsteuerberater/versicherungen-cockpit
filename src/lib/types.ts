@@ -21,6 +21,7 @@ export interface Organization {
   phone: string | null
   email: string | null
   address: string | null
+  website: string | null
   created_at: string
 }
 
